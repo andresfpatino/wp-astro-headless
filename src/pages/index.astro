@@ -3,6 +3,34 @@ import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
+
+const headers = { 'Content-Type' : 'application/json' };
+
+const postData = await fetch(import.meta.env.WORDPRESS_URL, {
+	method: 'POST',
+	headers,
+	body: JSON.stringify({
+		query: `{
+			posts {
+				nodes {
+					title
+					content
+					slug
+					categories {
+						nodes {
+							name
+							uri
+						}
+					}
+				}
+			}
+		}`
+	})
+}).then(data => data.json())
+
+const posts = postData?.data?.posts?.nodes;
+
+
 ---
 
 <!DOCTYPE html>
@@ -12,9 +40,30 @@ import { SITE_TITLE, SITE_DESCRIPTION } from '../consts';
 	</head>
 	<body>
 		<Header title={SITE_TITLE} />
+
+
 		<main>
-			<h1>🧑‍🚀 Hello, Astronaut!</h1>
+			{
+				posts.map((post) => {
+					return(
+						<div class="post">
+							<h3>{post.title}</h3>
+							{
+								post.categories.nodes.map((category) => {
+									return (
+										<b> <a href={category.uri}> {category.name} </a> </b>
+									);
+								})
+							}
+							<p set:html={post.content}></p>
+							<a href={post.slug}> Ver mas </a>
+						</div>
+					)
+				})
+			}
 		</main>
+
+
 		<Footer />
 	</body>
 </html>
